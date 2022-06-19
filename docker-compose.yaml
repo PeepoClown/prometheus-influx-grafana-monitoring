@@ -1,0 +1,53 @@
+version: '3.9'
+
+networks:
+  monitoring:
+    driver: bridge
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    hostname: prometheus
+    container_name: prometheus-container
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    restart: on-failure
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./data/prometheus_data:/prometheus
+    ports:
+      - ${PROMETHEUS_PORT}:9090
+    networks:
+      - monitoring
+
+  influxdb:
+    image: influxdb:1.8.1
+    hostname: influxdb
+    container_name: influxdb-container
+    environment:
+      - INFLUXDB_DB=${INFLUXDB_DB}
+      - INFLUXDB_USER=${INFLUXDB_USER}
+      - INFLUXDB_USER_PASSWORD=${INFLUXDB_USER_PASSWORD}
+    restart: on-failure
+    volumes:
+      - ./data/influxdb_data:/var/lib/influxdb
+    ports:
+      - ${INFLUXDB_PORT}:8086
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:6.7.2
+    hostname: grafana
+    container_name: grafana-container
+    environment:
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    restart: on-failure
+    volumes:
+      - ./data/grafana_data:/var/lib/grafana
+    ports:
+      - ${GRAFANA_PORT}:3000
+    networks:
+      - monitoring
